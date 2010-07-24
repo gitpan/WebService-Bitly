@@ -1,0 +1,31 @@
+---
+abstract: 'A Perl interface to the bit.ly API'
+author:
+  - 'Yuki Shibazaki <shiba1029196473@gmail.com>'
+build_requires:
+  ExtUtils::MakeMaker: 6.42
+  IO::Prompt: 0
+  Test::Class: 0
+  Test::More: 0
+configure_requires:
+  ExtUtils::MakeMaker: 6.42
+distribution_type: module
+generated_by: 'Module::Install version 0.95'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: WebService-Bitly
+no_index:
+  directory:
+    - inc
+    - t
+requires:
+  Class::Accessor::Fast: 0
+  JSON: 0
+  LWP::UserAgent: 0
+  URI: 0
+  URI::QueryParam: 0
+resources:
+  license: http://dev.perl.org/licenses/
+version: 0.01

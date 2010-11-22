@@ -2,9 +2,17 @@ package Test::Function;
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin/lib";
+
 use Test::More;
-use WebService::Bitly;
+use Test::Exception;
 use IO::Prompt;
+use YAML::Syck;
+use Path::Class qw(file);
+
+use WebService::Bitly;
+use Test::WebService::Bitly;
 
 use base qw(Test::Class Class::Accessor::Fast);
 
@@ -23,6 +31,9 @@ sub api_input : Test(startup) {
         end_user_name     => $user_name,
         end_user_api_key  => $user_api_key,
     };
+
+    my $data_file = file(__FILE__)->dir->subdir('data')->file('response.yml');
+    $self->{data} = LoadFile($data_file->stringify);
 }
 
 sub test_010_instance : Test(8) {
@@ -85,8 +96,6 @@ sub test_012_set_end_user_info : Test(4) {
 sub test_013_validate : Test(9) {
     my $self = shift;
     my $args = $self->args;
-
-    return q{bit.ly validate api doesn't work now};
 
     if (!$args->{user_name} && !$args->{user_api_key}) {
         return 'user name and api key are both required';
@@ -291,6 +300,50 @@ sub test_020_http_error : Test(4) {
     my $shorten = $bitly->shorten('http://www.google.co.jp/');
     isa_ok $shorten, 'WebService::Bitly::Result::HTTPError', 'is correct object';
     ok $shorten->is_error, 'error should occur';
+}
+
+sub test_021_referrers : Test(18) {
+    my $self = shift;
+    my $args = $self->args;
+
+    if (!$args->{user_name} && !$args->{user_api_key}) {
+        return 'user name and api key are both required';
+    }
+
+    ok my $bitly = WebService::Bitly->new(
+        %$args,
+    );
+
+    dies_ok(sub {$bitly->refferers}, 'Either short_url or hash is required');
+    dies_ok(sub {
+        $bitly->refferers(
+            short_url => 'http://bit.ly/djZ9g4',
+            hash      => 'djZ9g4',
+        );
+    }, 'Either short_url or hash is required');
+
+    # check bit.ly access
+    my $result_referrer = $bitly->referrers(short_url => 'http://bit.ly/djZ9g4');
+    ok $result_referrer->global_hash, 'can access global hash';
+    ok $result_referrer->short_url, 'can access short_url';
+    ok $result_referrer->user_hash, 'can access user hash';
+    ok $result_referrer->referrers, 'can access referrers';
+
+    # check whether to be able to use accessor method
+    my $data = $self->{data}->{referrers};
+    $result_referrer = initialize_result_class('Referrers', $data);
+    is $result_referrer->created_by, $data->{data}->{created_by}, 'correct created_by';
+    is $result_referrer->global_hash, $data->{data}->{global_hash}, 'correct global_hash';
+    is $result_referrer->short_url, $data->{data}->{short_url}, 'correct short_url';
+    is $result_referrer->user_hash, $data->{data}->{user_hash}, 'correct user_hash';
+
+    my $referrers = $result_referrer->referrers;
+    is $referrers->[0]->clicks, $data->{data}->{referrers}->[0]->{clicks}, 'correct clicks';
+    is $referrers->[0]->referrer, $data->{data}->{referrers}->[0]->{referrer}, 'correct referrer';
+    is $referrers->[0]->referrer_app, $data->{data}->{referrers}->[0]->{referrer_app}, 'correct referrer_app';
+    is $referrers->[0]->url, $data->{data}->{referrers}->[0]->{url}, 'correct url';
+    is $referrers->[1]->clicks, $data->{data}->{referrers}->[1]->{clicks}, 'correct clicks';
+    is $referrers->[1]->referrer, $data->{data}->{referrers}->[1]->{referrer}, 'correct referrer';
 }
 
 __PACKAGE__->runtests;

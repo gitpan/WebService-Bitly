@@ -26,6 +26,10 @@ __PACKAGE__->mk_accessors(qw(
     referrer
     referrer_app
     clicks
+
+    country
+
+    day_start
 ));
 
 sub new {

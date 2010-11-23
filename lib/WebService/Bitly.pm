@@ -5,7 +5,7 @@ use strict;
 use Carp;
 use UNIVERSAL::require;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use URI;
 use URI::QueryParam;
@@ -118,7 +118,7 @@ sub referrers {
     my $short_url = $args{short_url} || [];
     my $hash      = $args{hash} || [];
     if ($short_url xor $hash) {
-        croak("please input either short_url or hash.");
+        croak("please input either short_url or hash, not both.");
     }
 
     my $api_url = $self->_api_url("referrers");
@@ -126,6 +126,51 @@ sub referrers {
        $api_url->query_param(hash     => $hash)      if $hash;
 
     $self->_do_request($api_url, 'Referrers');
+}
+
+sub countries {
+    my ($self, %args) = @_;
+    my $short_url = $args{short_url} || [];
+    my $hash      = $args{hash} || [];
+    if ($short_url xor $hash) {
+        croak("please input either short_url or hash, not both.");
+    }
+
+    my $api_url = $self->_api_url("countries");
+       $api_url->query_param(shortUrl => $short_url) if $short_url;
+       $api_url->query_param(hash     => $hash)      if $hash;
+
+    $self->_do_request($api_url, 'Countries');
+}
+
+sub clicks_by_minute {
+    my ($self, %args) = @_;
+    my $short_urls = $args{short_urls} || [];
+    my $hashes     = $args{hashes} || [];
+    if (!$short_urls && !$hashes) {
+        croak("either short_urls or hashes is required parameter.\n");
+    }
+
+    my $api_url = $self->_api_url("clicks_by_minute");
+       $api_url->query_param(shortUrl => reverse(@$short_urls))   if $short_urls;
+       $api_url->query_param(hash     => reverse(@$hashes))       if $hashes;
+
+    $self->_do_request($api_url, 'ClicksByMinute');
+}
+
+sub clicks_by_day {
+    my ($self, %args) = @_;
+    my $short_urls = $args{short_urls} || [];
+    my $hashes     = $args{hashes} || [];
+    if (!$short_urls && !$hashes) {
+        croak("either short_urls or hashes is required parameter.\n");
+    }
+
+    my $api_url = $self->_api_url("clicks_by_day");
+       $api_url->query_param(shortUrl => reverse(@$short_urls))   if $short_urls;
+       $api_url->query_param(hash     => reverse(@$hashes))       if $hashes;
+
+    $self->_do_request($api_url, 'ClicksByDay');
 }
 
 sub bitly_pro_domain {
@@ -229,7 +274,7 @@ WebService::Bitly - A Perl interface to the bit.ly API
 
 =head1 VERSION
 
-This document describes version 0.03 of WebService::Bitly.
+This document describes version 0.04 of WebService::Bitly.
 
 =head1 SYNOPSIS
 
@@ -452,7 +497,7 @@ You can get data by following method of result object.
 
 =item * referrers
 
-returns array or arrayref of referrer information object.  array context returns array,  and scalar context returns arrayref.  you can use accessor method such as clicks, referrer, referrer_app nand url.
+returns array or arrayref of referrer information object.  array context returns array,  and scalar context returns arrayref.  you can use accessor method such as clicks, referrer, referrer_app and url.
 
 =back
 
@@ -462,6 +507,80 @@ returns array or arrayref of referrer information object.  array context returns
        printf '%s : %s', $referrer->referrer, $referrer->clicks;
    }
 
+=head2 countries
+
+Get a list of countries for a specified short url or hash.  You can use this in much the same way as referrers method.  you are be able to data by following method of result object.
+
+=over 4
+
+=item * is_error
+
+=item * created_by
+
+=item * global_hash
+
+=item * short_url
+
+=item * user_hash
+
+=item * countries
+
+returns array or arrayref of arrayref of countries information object depending on context.  you can use accessor method such as clicks and country.
+
+=back
+
+=head2 clicks_by_minute
+
+Get time series clicks per minute by short urls and hashes.  You can use this in much the same way as expand method.  Each result object has following method.
+
+=over 4
+
+=item * is_error
+
+=item * short_url
+
+=item * hash
+
+=item * user_hash
+
+=item * global_hash
+
+=item * clicks
+
+arrayref of the number of clicks per minutes.
+
+=back
+
+=head2 clicks_by_day
+
+Get time series clicks per day for the last 30 days by short urls and hashes.  You can use this in much the same way as clicks_by_minute method.  Each result object has following method.
+
+=over 4
+
+=item * is_error
+
+=item * short_url
+
+=item * hash
+
+=item * user_hash
+
+=item * global_hash
+
+=item * clicks
+
+arrayref of clicks information object.  each object has accessor for clicks and day_start.
+
+=back
+
+   my $result_clicks = $bitly->clicks_by_day(short_url => ['http://bit.ly/abcdef'], hash => ['abcdef']);
+   for my $result (@{$result_clicks->results}) {
+       print $result->user_hash;
+       for my $clicks (@{$result->clicks}) {
+           print $clicks->clicks;
+           print $clicks->day_start;
+       }
+   }
 
 =head2 bitly_pro_domain($domain)
 

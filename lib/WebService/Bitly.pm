@@ -5,7 +5,7 @@ use strict;
 use Carp;
 use UNIVERSAL::require;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use URI;
 use URI::QueryParam;
@@ -36,7 +36,7 @@ sub new {
     }
 
     $args{version} ||= 'v3';
-    $args{ua} = LWP::UserAgent->new(
+    $args{ua} ||= LWP::UserAgent->new(
         env_proxy => 1,
         timeout   => 30,
     );
@@ -62,8 +62,8 @@ sub shorten {
 
 sub expand {
     my ($self, %args) = @_;
-    my $short_urls = $args{short_urls} || [];
-    my $hashes     = $args{hashes} || [];
+    my $short_urls = $args{short_urls} || undef;
+    my $hashes     = $args{hashes} || undef;
     if (!$short_urls && !$hashes) {
         croak("either short_urls or hashes is required parameter.\n");
     }
@@ -100,8 +100,8 @@ sub set_end_user_info {
 
 sub clicks {
     my ($self, %args) = @_;
-    my $short_urls   = $args{short_urls} || [];
-    my $hashes       = $args{hashes} || [];
+    my $short_urls   = $args{short_urls} || undef;
+    my $hashes       = $args{hashes} || undef;
     if (!$short_urls && !$hashes) {
         croak("either short_urls or hashes is required parameter.\n");
     }
@@ -115,9 +115,10 @@ sub clicks {
 
 sub referrers {
     my ($self, %args) = @_;
-    my $short_url = $args{short_url} || [];
-    my $hash      = $args{hash} || [];
-    if ($short_url xor $hash) {
+    my $short_url = $args{short_url} || '';
+    my $hash      = $args{hash} || '';
+
+    unless ($short_url xor $hash) {
         croak("please input either short_url or hash, not both.");
     }
 
@@ -130,9 +131,10 @@ sub referrers {
 
 sub countries {
     my ($self, %args) = @_;
-    my $short_url = $args{short_url} || [];
-    my $hash      = $args{hash} || [];
-    if ($short_url xor $hash) {
+    my $short_url = $args{short_url} || '';
+    my $hash      = $args{hash} || '';
+
+    unless ($short_url xor $hash) {
         croak("please input either short_url or hash, not both.");
     }
 
@@ -145,8 +147,8 @@ sub countries {
 
 sub clicks_by_minute {
     my ($self, %args) = @_;
-    my $short_urls = $args{short_urls} || [];
-    my $hashes     = $args{hashes} || [];
+    my $short_urls = $args{short_urls} || undef;
+    my $hashes     = $args{hashes} || undef;
     if (!$short_urls && !$hashes) {
         croak("either short_urls or hashes is required parameter.\n");
     }
@@ -160,8 +162,8 @@ sub clicks_by_minute {
 
 sub clicks_by_day {
     my ($self, %args) = @_;
-    my $short_urls = $args{short_urls} || [];
-    my $hashes     = $args{hashes} || [];
+    my $short_urls = $args{short_urls} || undef;
+    my $hashes     = $args{hashes} || undef;
     if (!$short_urls && !$hashes) {
         croak("either short_urls or hashes is required parameter.\n");
     }
@@ -218,13 +220,13 @@ sub authenticate {
     }
 
     my $bitly_response = from_json($response->content);
-    return WebService::Bitly::Result::Autenticate->new($bitly_response);
+    return WebService::Bitly::Result::Authenticate->new($bitly_response);
 }
 
 sub info {
     my ($self, %args) = @_;
-    my $short_urls   = $args{short_urls} || [];
-    my $hashes       = $args{hashes} || [];
+    my $short_urls   = $args{short_urls} || undef;
+    my $hashes       = $args{hashes} || undef;
     if (!$short_urls && !$hashes) {
         croak("either short_urls or hashes is required parameter.\n");
     }
@@ -274,7 +276,7 @@ WebService::Bitly - A Perl interface to the bit.ly API
 
 =head1 VERSION
 
-This document describes version 0.04 of WebService::Bitly.
+This document describes version 0.05 of WebService::Bitly.
 
 =head1 SYNOPSIS
 

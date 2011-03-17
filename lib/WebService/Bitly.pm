@@ -5,7 +5,7 @@ use strict;
 use Carp;
 use UNIVERSAL::require;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use URI;
 use URI::QueryParam;
@@ -13,7 +13,6 @@ use LWP::UserAgent;
 use JSON;
 
 use WebService::Bitly::Result::HTTPError;
-use WebService::Bitly::Result::Authenticate;
 
 use base qw(Class::Accessor::Fast);
 
@@ -199,30 +198,6 @@ sub lookup {
     $self->_do_request($api_url, 'Lookup');
 }
 
-sub authenticate {
-    my ($self, $end_user_name, $end_user_password) = @_;
-
-    my $api_url = $self->_api_url("authenticate");
-
-    my $response = $self->ua->post($api_url, [
-        format     => 'json',
-        login      => $self->user_name,
-        apiKey     => $self->user_api_key,
-        x_login    => $end_user_name,
-        x_password => $end_user_password,
-    ]);
-
-    if (!$response->is_success) {
-        return WebService::Bitly::Result::HTTPError->new({
-            status_code => $response->code,
-            status_txt  => $response->message,
-        });
-    }
-
-    my $bitly_response = from_json($response->content);
-    return WebService::Bitly::Result::Authenticate->new($bitly_response);
-}
-
 sub info {
     my ($self, %args) = @_;
     my $short_urls   = $args{short_urls} || undef;
@@ -276,7 +251,7 @@ WebService::Bitly - A Perl interface to the bit.ly API
 
 =head1 VERSION
 
-This document describes version 0.05 of WebService::Bitly.
+This document describes version 0.06 of WebService::Bitly.
 
 =head1 SYNOPSIS
 
@@ -651,16 +626,6 @@ the bit.ly username that originally shortened this link.
 return error message, if error occured by the url.
 
 =back
-
-=head2 authenticate($end_user_name, $end_user_password)
-
-Lookup a bit.ly API key by given end-user name and end-user password.  However, this method is only available to allowed bit.ly user.  To get more information, see bit.ly api documentation.
-
-    my $result = $bitly->authenticate('bitlyapidemo', 'good-password');
-    if ($result->is_success) {
-        print $result->user_name;
-        print $result->api_key;
-    }
 
 =head1 SEE ALSO
 
